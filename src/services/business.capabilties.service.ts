@@ -1,11 +1,8 @@
 import { db } from './connection';
 
 import { Application } from 'interfaces/applications.interface';
-import { Capabilities } from '@/interfaces/capabilities.interface';
 import { Levels } from '@/interfaces/capabilityRelationships';
 import { AllCapabilities } from '@/interfaces/AllCapabilities.interface';
-
-
 
 class BusinessCapabilityService {
   public async findAllApplications(): Promise<Application[]> {

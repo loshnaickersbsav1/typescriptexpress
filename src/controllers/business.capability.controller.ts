@@ -1,13 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import { Application } from '@interfaces/applications.interface';
 import BusinessCapabilityService from '@services/business.capabilties.service';
-import { Capabilities } from '@/interfaces/capabilities.interface';
 import { Levels } from '@/interfaces/capabilityRelationships';
 import { BusinessCapabilities } from '@/models/businessCapabilities';
 import { CapabilitiesWithChildren } from '@/models/capabilitiesWithChildren';
-import { capability } from '@/models/capability';
 import { AllCapabilities } from '@/interfaces/AllCapabilities.interface';
 import { CapabilitiesWithoutChildren } from '@/models/capabilitiesWithoutChildren';
+import { json } from 'envalid';
 
 class BusinessCapabilityController {
   public bus = new BusinessCapabilityService();
@@ -56,42 +55,32 @@ class BusinessCapabilityController {
     }
   };
 
-  public treeStructure = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      console.log('getting tree structure');
-
-      let businessCapabilities: CapabilitiesWithChildren[];
-      let tree: string[][][][];
-
-      const getallCapabilities: AllCapabilities[] = await this.bus.allCapabilities();
-
-      res.status(200).json({ data: getallCapabilities, message: 'getAll' });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  storeValue = (currentRecord: AllCapabilities, type: string): CapabilitiesWithChildren => {
-    const returnedValue: CapabilitiesWithChildren;
+  storeValue = (currentRecord: AllCapabilities, type: string): any => {
+    const returnedValue: CapabilitiesWithChildren = { id: '', name: '', level: '', children: [] };
     switch (type) {
       case 'c':
         returnedValue.name = currentRecord.capability;
         returnedValue.level = 'l1';
         returnedValue.id = currentRecord.capability_id;
+        returnedValue.children = [];
         break;
       case 's':
         returnedValue.name = currentRecord.sub_capability;
         returnedValue.level = 'l2';
         returnedValue.id = currentRecord.sub_capability_id;
+        returnedValue.children = [];
         break;
       case 'b':
         returnedValue.name = currentRecord.business_function;
         returnedValue.level = 'l3';
         returnedValue.id = currentRecord.business_function_id;
+        returnedValue.children = [];
+        break;
       default:
         returnedValue.name = currentRecord.business_sub_function;
         returnedValue.level = 'l4';
         returnedValue.id = currentRecord.business_sub_function_id;
+        returnedValue.children = undefined;
     }
 
     return returnedValue;
@@ -101,15 +90,43 @@ class BusinessCapabilityController {
     try {
       console.log('getting capabilities--');
 
-      let businessCapabilities: BusinessCapabilities;
-      let tree: AllCapabilities[][][][];
+      const businessCapabilitiesModel: BusinessCapabilities = {
+        values: [
+          // {
+          //   id: '',
+          //   name: '',
+          //   level: '',
+          //   children: [
+          //     {
+          //       id: '',
+          //       name: '',
+          //       level: '',
+          //       children: [
+          //         {
+          //           id: '',
+          //           name: '',
+          //           level: '',
+          //           children: [
+          //             {
+          //               id: '',
+          //               name: '',
+          //               level: '',
+          //             },
+          //           ],
+          //         },
+          //       ],
+          //     },
+          //   ],
+          // },
+        ],
+      };
 
       const returnedCapabilities: AllCapabilities[] = await this.bus.allCapabilities();
 
-      let storeCapability: CapabilitiesWithChildren;
-      let storeSubCapability: CapabilitiesWithChildren;
-      let storeBusinessFunction: CapabilitiesWithChildren;
-      let storeBusinessSubFunction: CapabilitiesWithoutChildren;
+      let storeCapability: any;
+      let storeSubCapability: any;
+      let storeBusinessFunction: any;
+      let storeBusinessSubFunction: any;
       let lastCap = 0;
       let lastSubCap = 0;
       let lastBusFunction = 0;
@@ -119,31 +136,40 @@ class BusinessCapabilityController {
 
       while (record < returnedCapabilities.length) {
         storeCapability = this.storeValue(returnedCapabilities[record], 'c');
-        businessCapabilities.businessCapabilites.push(storeCapability);
-        lastCap = businessCapabilities.businessCapabilites.length - 1;
+        console.log('Capability');
+        console.log(JSON.stringify(storeCapability));
+        businessCapabilitiesModel.values.push(storeCapability);
+        lastCap = businessCapabilitiesModel.values.length - 1;
+        console.log(lastCap);
 
-        while (storeCapability.name === returnedCapabilities[record].capability) {
+        while (record < returnedCapabilities.length && storeCapability.name === returnedCapabilities[record].capability) {
+          console.log('subCapability');
           storeSubCapability = this.storeValue(returnedCapabilities[record], 's');
-          businessCapabilities.businessCapabilites[lastCap].children.push(storeCapability);
-          lastSubCap = businessCapabilities.businessCapabilites[lastCap].children.length - 1;
+          console.log(JSON.stringify(storeSubCapability));
+          businessCapabilitiesModel.values[lastCap].children.push(storeSubCapability);
+          lastSubCap = businessCapabilitiesModel.values[lastCap].children.length - 1;
+          console.log(lastSubCap);
 
-          while (storeSubCapability.name === returnedCapabilities[record].sub_capability) {
+          while (record < returnedCapabilities.length && storeSubCapability.name === returnedCapabilities[record].sub_capability) {
+            console.log('Business function');
             storeBusinessFunction = this.storeValue(returnedCapabilities[record], 'b');
-            businessCapabilities.businessCapabilites[lastCap].children[lastSubCap].children.push(storeBusinessFunction);
-            lastBusFunction = businessCapabilities.businessCapabilites[lastCap].children[lastSubCap].children.length - 1;
-
-            while (storeBusinessFunction.name === returnedCapabilities[record].business_function) {
+            console.log(JSON.stringify(storeBusinessFunction));
+            businessCapabilitiesModel.values[lastCap].children[lastSubCap].children.push(storeBusinessFunction);
+            lastBusFunction = businessCapabilitiesModel.values[lastCap].children[lastSubCap].children.length - 1;
+            console.log(lastBusFunction);
+            while (record < returnedCapabilities.length && storeBusinessFunction.name === returnedCapabilities[record].business_function) {
+              console.log('Business Sub function');
               storeBusinessSubFunction = this.storeValue(returnedCapabilities[record], 'sb');
-              businessCapabilities.businessCapabilites[lastCap].children[lastSubCap].children[lastBusFunction].push(storeBusinessSubFunction);
-              lastBusFunction = businessCapabilities.businessCapabilites.length - 1;
-
+              console.log(JSON.stringify(storeBusinessSubFunction));
+              businessCapabilitiesModel.values[lastCap].children[lastSubCap].children[lastBusFunction].children.push(storeBusinessSubFunction);
+              console.log(businessCapabilitiesModel);
               record++;
             }
           }
         }
       }
 
-      res.status(200).json({ data: businessCapabilities, message: 'getAllCapabilities' });
+      res.status(200).json({ data: businessCapabilitiesModel, message: 'getAllCapabilities' });
     } catch (error) {
       next(error);
     }

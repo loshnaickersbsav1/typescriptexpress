@@ -1,5 +1,30 @@
-import { CapabilitiesWithChildren } from "@/models/capabilitiesWithChildren";
-
 export interface BusinessCapabilities {
-  businessCapabilites: CapabilitiesWithChildren[];
+  values: [
+    {
+      id?: string;
+      name?: string;
+      level?: string;
+      children?: [
+        {
+          id?: string;
+          name?: string;
+          level?: string;
+          children?: [
+            {
+              id?: string;
+              name?: string;
+              level?: string;
+              children?: [
+                {
+                  id?: string;
+                  name?: string;
+                  level?: string;
+                },
+              ];
+            },
+          ];
+        },
+      ];
+    },
+  ];
 }

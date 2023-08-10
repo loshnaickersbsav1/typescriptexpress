@@ -3,7 +3,7 @@ import BusinessCapability from '@/controllers/business.capability.controller';
 import { Routes } from '@interfaces/routes.interface';
 
 class BusinessCapabilityRoutes implements Routes {
-  public path = '/capabilities';
+  public path = '/capabilities1';
   public router = Router();
   public businessCapability = new BusinessCapability();
 

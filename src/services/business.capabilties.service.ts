@@ -40,3 +40,4 @@ class BusinessCapabilityService {
   }
 }
 export default BusinessCapabilityService;
+ 
